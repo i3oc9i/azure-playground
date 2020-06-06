@@ -78,6 +78,8 @@ resource "azurerm_linux_virtual_machine" "jumpbox_vm" {
 
     size  = "Standard_B1s"
 
+    availability_set_id = azurerm_availability_set.jumpbox_availability_set.id
+
     network_interface_ids = [
         azurerm_network_interface.jumpbox_nic.id
     ]
@@ -103,3 +105,11 @@ resource "azurerm_linux_virtual_machine" "jumpbox_vm" {
     }
 }
 
+resource "azurerm_availability_set" "jumpbox_availability_set" {
+    name                = "${var.jumpbox_resource_prefix}-availability_set"
+    resource_group_name = azurerm_resource_group.jumpbox_rg.name
+    location            = var.jumpbox_location
+
+    managed                     = true
+    platform_fault_domain_count = 2
+}
