@@ -1,6 +1,8 @@
 
 jumpbox_environment = "production"
 
+jumpbox_count = 2
+
 jumpbox_location = "francecentral"
 
 jumpbox_address_space  = "10.3.0.0/16"
