@@ -33,15 +33,17 @@ resource "azurerm_public_ip" "jumpbox_public_ip" {
 }
 
 resource "azurerm_network_interface" "jumpbox_nic" {
-    name                = "${var.jumpbox_name}-nic"
+    name                = "${var.jumpbox_name}-${format("%02d", count.index)}-nic"
     resource_group_name = azurerm_resource_group.jumpbox_rg.name
     location            = var.jumpbox_location
+
+    count = var.jumpbox_count
 
     ip_configuration {
         name                          = "${var.jumpbox_name}-ip"
         subnet_id                     = azurerm_subnet.jumpbox_subnet.id
         private_ip_address_allocation = "dynamic"
-        public_ip_address_id          = azurerm_public_ip.jumpbox_public_ip.id
+        public_ip_address_id          = count.index == 0 ? azurerm_public_ip.jumpbox_public_ip.id : null
     }
 }
 
@@ -66,22 +68,24 @@ resource "azurerm_network_security_rule" "jumpbox_nsg_rule_ssh" {
     destination_port_range      = "22"
 }
 
-resource "azurerm_network_interface_security_group_association" "jumpbox_nsg_association" {
+resource "azurerm_subnet_network_security_group_association" "jumpbox_sag" {
     network_security_group_id = azurerm_network_security_group.jumpbox_nsg.id
-    network_interface_id      = azurerm_network_interface.jumpbox_nic.id
+    subnet_id                 = azurerm_subnet.jumpbox_subnet.id
 }
 
 resource "azurerm_linux_virtual_machine" "jumpbox_vm" {
-    name                = var.jumpbox_name
+    name                = "${var.jumpbox_name}-${format("%02d", count.index)}"
     resource_group_name = azurerm_resource_group.jumpbox_rg.name
     location            = var.jumpbox_location
+
+    count = var.jumpbox_count
 
     size  = "Standard_B1s"
 
     availability_set_id = azurerm_availability_set.jumpbox_availability_set.id
 
     network_interface_ids = [
-        azurerm_network_interface.jumpbox_nic.id
+        azurerm_network_interface.jumpbox_nic[count.index].id
     ]
 
     admin_username = "ubuntu"
@@ -92,7 +96,7 @@ resource "azurerm_linux_virtual_machine" "jumpbox_vm" {
     }
 
     os_disk {
-        name                 = "${var.jumpbox_name}-os-disk"
+        name                 = "${var.jumpbox_name}-${format("%02d", count.index)}-os-disk"
         caching              = "ReadWrite"
         storage_account_type = "Standard_LRS"
     }

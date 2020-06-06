@@ -15,6 +15,11 @@ variable "jumpbox_name" {
     default = "jumpbox-vm"
 }
 
+variable "jumpbox_count" {
+    type = number
+    default = 2
+}
+
 variable "jumpbox_location" {
     type = string
     default = "westus2"
