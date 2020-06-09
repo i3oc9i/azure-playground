@@ -12,7 +12,12 @@ variable "webserver_resource_prefix" {
 
 variable "webserver_name" {
     type = string
-    default = "webserver-vm"
+    default = "webserver"
+}
+
+variable "webserver_version" {
+    type = string
+    default = "1.0.0"
 }
 
 variable "webserver_count" {

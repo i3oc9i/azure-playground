@@ -4,8 +4,8 @@ provider "azurerm" {
 }
 
 locals {
-    web_server_name   = var.environment == "production" ? "${var.web_server_name}-prd" : "${var.web_server_name}-dev"
-    build_environment = var.environment == "production" ? "production" : "development"
+    webserver_name    = var.webserver_environment == "production" ? "${var.webserver_name}-prd" : "${var.webserver_name}-dev"
+    build_environment = var.webserver_environment == "production" ? "production" : "development"
 }
 
 resource "azurerm_resource_group" "webserver_rg" {
@@ -78,7 +78,7 @@ resource "azurerm_virtual_machine_scale_set" "webserver_vm" {
         primary = true
 
         ip_configuration {
-            name      = var.webserver_name
+            name      = local.webserver_name
             primary   = true
             subnet_id = azurerm_subnet.webserver_subnet["webserver_subnet"].id
         }
@@ -105,7 +105,7 @@ resource "azurerm_virtual_machine_scale_set" "webserver_vm" {
     }
 
     os_profile {
-        computer_name_prefix = var.webserver_name
+        computer_name_prefix = local.webserver_name
 
         admin_username = "ubuntu"
     }
@@ -120,7 +120,9 @@ resource "azurerm_virtual_machine_scale_set" "webserver_vm" {
     }
 
     tags = {
-        environment = var.webserver_resource_prefix
+        application   = local.webserver_name
+        build         = local.build_environment
+        build-version = var.webserver_version
     }
 }
 
