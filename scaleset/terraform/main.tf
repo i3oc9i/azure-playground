@@ -3,6 +3,11 @@ provider "azurerm" {
     features {}
 }
 
+locals {
+    web_server_name   = var.environment == "production" ? "${var.web_server_name}-prd" : "${var.web_server_name}-dev"
+    build_environment = var.environment == "production" ? "production" : "development"
+}
+
 resource "azurerm_resource_group" "webserver_rg" {
     name     = "${var.webserver_resource_prefix}-rg"
     location = var.webserver_location
@@ -82,7 +87,7 @@ resource "azurerm_virtual_machine_scale_set" "webserver_vm" {
     sku {
         name     = "Standard_B1s"
         tier     = "Standard"
-        capacity = var.webserver_count # NUMBER OF MAX COMPUTE IN THE SET
+        capacity = var.webserver_count
     }
 
     storage_profile_image_reference {
