@@ -2,7 +2,7 @@
 #--
 variable "jumpbox_environment" {
     type = string
-    default = "development"
+    default = "production"
 }
 
 variable "jumpbox_resource_prefix" {
@@ -25,19 +25,23 @@ variable "jumpbox_location" {
     default = "westus2"
 }
 
-variable "jumpbox_address_space" {
+variable "jumpbox_ssh_authorized_key" {
+    type = string
+    default = "~/.ssh/id_rsa.pub"
+}
+
+variable "jumpbox_vnet_address_space" {
     type = string
     default = "10.0.0.0/16"
 }
 
-variable "jumpbox_address_subnet" {
-    type = string
-    default = "1.0.1.0/24"
-}
+variable "jumpbox_subnets_addresses" {
+    type = map(string)
 
-variable "jumpbox_ssh_authorized_key" {
-    type = string
-    default = "~/.ssh/id_rsa.pub"
+    default = {
+        jumpbox_subnet     = "1.0.1.0/24"
+        AzureBastionSubnet = "1.0.2.0/24"
+    }
 }
 
 variable "remote_authorized_ips" {

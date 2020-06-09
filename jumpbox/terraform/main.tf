@@ -13,15 +13,16 @@ resource "azurerm_virtual_network" "jumpbox_vnet" {
     resource_group_name = azurerm_resource_group.jumpbox_rg.name
     location            = var.jumpbox_location
 
-    address_space       = [var.jumpbox_address_space]
+    address_space       = [var.jumpbox_vnet_address_space]
 }
 
 resource "azurerm_subnet" "jumpbox_subnet" {
-    name                 = "${var.jumpbox_resource_prefix}-subnet"
-    resource_group_name  = azurerm_resource_group.jumpbox_rg.name
-
-    virtual_network_name = azurerm_virtual_network.jumpbox_vnet.name
-    address_prefix       = var.jumpbox_address_subnet
+    for_each = var.jumpbox_subnets_addresses
+    
+        name                 = each.key
+        resource_group_name  = azurerm_resource_group.jumpbox_rg.name
+        virtual_network_name = azurerm_virtual_network.jumpbox_vnet.name
+        address_prefix       = each.value
 }
 
 resource "azurerm_public_ip" "jumpbox_public_ip" {
@@ -41,7 +42,7 @@ resource "azurerm_network_interface" "jumpbox_nic" {
 
     ip_configuration {
         name                          = "${var.jumpbox_name}-ip"
-        subnet_id                     = azurerm_subnet.jumpbox_subnet.id
+        subnet_id                     = azurerm_subnet.jumpbox_subnet["jumpbox_subnet"].id
         private_ip_address_allocation = "dynamic"
         public_ip_address_id          = count.index == 0 ? azurerm_public_ip.jumpbox_public_ip.id : null
     }
@@ -57,6 +58,8 @@ resource "azurerm_network_security_rule" "jumpbox_nsg_rule_ssh" {
     resource_group_name         = azurerm_resource_group.jumpbox_rg.name
     network_security_group_name = azurerm_network_security_group.jumpbox_nsg.name
 
+    count = var.jumpbox_environment == "production" ? 0 : 1 # in production we disallow SSH
+
     name                        = "SSH Inbound"
     priority                    = 100
     direction                   = "Inbound"
@@ -70,7 +73,7 @@ resource "azurerm_network_security_rule" "jumpbox_nsg_rule_ssh" {
 
 resource "azurerm_subnet_network_security_group_association" "jumpbox_sag" {
     network_security_group_id = azurerm_network_security_group.jumpbox_nsg.id
-    subnet_id                 = azurerm_subnet.jumpbox_subnet.id
+    subnet_id                 = azurerm_subnet.jumpbox_subnet["jumpbox_subnet"].id
 }
 
 resource "azurerm_linux_virtual_machine" "jumpbox_vm" {
