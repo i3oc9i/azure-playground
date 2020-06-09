@@ -43,7 +43,7 @@ resource "azurerm_network_interface" "jumpbox_nic" {
     ip_configuration {
         name                          = "${var.jumpbox_name}-ip"
         subnet_id                     = azurerm_subnet.jumpbox_subnet["jumpbox_subnet"].id
-        private_ip_address_allocation = "dynamic"
+        private_ip_address_allocation = "Dynamic"
         public_ip_address_id          = count.index == 0 ? azurerm_public_ip.jumpbox_public_ip.id : null
     }
 }
@@ -76,14 +76,14 @@ resource "azurerm_subnet_network_security_group_association" "jumpbox_sag" {
     subnet_id                 = azurerm_subnet.jumpbox_subnet["jumpbox_subnet"].id
 }
 
-resource "azurerm_linux_virtual_machine" "jumpbox_vm" {
+resource "azurerm_virtual_machine" "jumpbox_vm" {
     name                = "${var.jumpbox_name}-${format("%02d", count.index)}"
     resource_group_name = azurerm_resource_group.jumpbox_rg.name
     location            = var.jumpbox_location
 
     count = var.jumpbox_count
 
-    size  = "Standard_B1s"
+    vm_size  = "Standard_B1s"
 
     availability_set_id = azurerm_availability_set.jumpbox_availability_set.id
 
@@ -91,24 +91,37 @@ resource "azurerm_linux_virtual_machine" "jumpbox_vm" {
         azurerm_network_interface.jumpbox_nic[count.index].id
     ]
 
-    admin_username = "ubuntu"
- 
-    admin_ssh_key {
-        username   = "ubuntu"
-        public_key = file(var.jumpbox_ssh_authorized_key)
-    }
-
-    os_disk {
-        name                 = "${var.jumpbox_name}-${format("%02d", count.index)}-os-disk"
-        caching              = "ReadWrite"
-        storage_account_type = "Standard_LRS"
-    }
-
-    source_image_reference {
+    storage_image_reference {
         publisher = "Canonical"
         offer     = "UbuntuServer"
         sku       = "18.04-LTS"
         version   = "latest"
+    }
+
+    storage_os_disk {
+        name              = "${var.jumpbox_name}-${format("%02d", count.index)}-os-disk"
+        caching           = "ReadWrite"
+        create_option     = "FromImage"
+        managed_disk_type = "Standard_LRS"
+    }
+
+    os_profile {
+        computer_name = "${var.jumpbox_name}-${format("%02d", count.index)}"
+
+        admin_username = "ubuntu"
+    }
+
+    os_profile_linux_config {
+        disable_password_authentication = true
+
+        ssh_keys {
+            key_data = file(var.jumpbox_ssh_authorized_key)
+            path     = "/home/ubuntu/.ssh/authorized_keys"
+        }
+    }
+
+    tags = {
+        environment = var.jumpbox_resource_prefix
     }
 }
 
