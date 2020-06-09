@@ -14,5 +14,4 @@ jumpbox_subnets_addresses = {
 
 jumpbox_ssh_authorized_key = "~/.ssh/azure_key.pub"
 
-
 # remote_authorized_ips = ["<set the remote ip>"]
